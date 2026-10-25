@@ -45,16 +45,14 @@ jobs:
           java-version: '17'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 34
-          build-tools-version: 34.0.0
-          ndk-version: 25.1.8909393
-
-      - name: Write local.properties
         run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME" >/dev/null
+          (yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1) || \
+          (yes | "$ANDROID_HOME"/cmdline-tools/16.0/bin/sdkmanager --licenses >/dev/null 2>&1) || true
+          ("$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0") || \
+          ("$ANDROID_HOME"/cmdline-tools/16.0/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0")
           echo "sdk.dir=$ANDROID_HOME" > local.properties
-          echo "ndk.dir=$ANDROID_HOME/ndk/25.1.8909393" >> local.properties
           cat local.properties
 
       - name: Grant execute permission

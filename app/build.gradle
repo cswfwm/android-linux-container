@@ -5,7 +5,6 @@ plugins {
 android {
     namespace 'com.prootshell'
     compileSdk 34
-    ndkVersion '25.1.8909393'
 
     defaultConfig {
         applicationId "com.prootshell"
@@ -13,10 +12,6 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
-
-        ndk {
-            abiFilters 'armeabi-v7a'
-        }
     }
 
     buildTypes {
