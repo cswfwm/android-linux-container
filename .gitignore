@@ -1,0 +1,9 @@
+build/
+.gradle/
+local.properties
+*.apk
+proot
+rootfs.tar
+.idea/
+*.iml
+.aicode/
