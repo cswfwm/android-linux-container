@@ -13,38 +13,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install cross compiler
+      # ---- 1. 拉取 prebuilt 静态 proot (armv7a, 适配 Android 5.x 老内核) ----
+      - name: Fetch prebuilt proot (armv7a-pre5)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-arm-linux-gnueabihf make automake autoconf libtool pkg-config
+          mkdir -p app/src/main/assets
+          curl -L -o /tmp/proot.tar.gz \
+            "https://raw.githubusercontent.com/green-green-avk/build-proot-android/master/packages/proot-android-armv7a-pre5.tar.gz"
+          tar -xzf /tmp/proot.tar.gz -C /tmp
+          ls -la /tmp/root/bin/proot
+          cp /tmp/root/bin/proot app/src/main/assets/proot
 
-      - name: Build static proot (armv7)
-        run: |
-          git clone --depth=1 https://github.com/proot-me/proot.git /tmp/proot
-          cd /tmp/proot
-          make -C src STATIC=1 \
-            CC=arm-linux-gnueabihf-gcc \
-            AR=arm-linux-gnueabihf-ar \
-            RANLIB=arm-linux-gnueabihf-ranlib
-          ls -la src/proot
-          cp src/proot $GITHUB_WORKSPACE/proot
-
-      - name: Fetch Alpine armhf minirootfs and pack as tar
+      # ---- 2. 拉取 Alpine armhf minirootfs 并打成未压缩 tar ----
+      - name: Fetch Alpine rootfs and pack as tar
         run: |
           curl -L -o /tmp/rootfs.tar.gz \
             "https://mirrors.huaweicloud.com/alpine/v3.12/releases/armhf/alpine-minirootfs-3.12.10-armhf.tar.gz"
           mkdir -p /tmp/rootfs
           tar -xzf /tmp/rootfs.tar.gz -C /tmp/rootfs
-          # 写死镜像源为可切换的国内镜像
-          mkdir -p /tmp/rootfs/etc
+          # 写死国内可切换镜像源
           printf '%s\n' \
             "https://mirrors.huaweicloud.com/alpine/v3.12/main" \
             "https://mirrors.huaweicloud.com/alpine/v3.12/community" > /tmp/rootfs/etc/apk/repositories
-          tar -C /tmp/rootfs -cf rootfs.tar .
-          ls -la rootfs.tar
-          mv rootfs.tar $GITHUB_WORKSPACE/app/src/main/assets/rootfs.tar
-          mv $GITHUB_WORKSPACE/proot $GITHUB_WORKSPACE/app/src/main/assets/proot
+          tar -C /tmp/rootfs -cf app/src/main/assets/rootfs.tar .
+          ls -la app/src/main/assets/rootfs.tar
 
+      # ---- 3. 构建 APK ----
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -77,7 +70,7 @@ jobs:
           path: app/build/outputs/apk/release/app-release.apk
           retention-days: 30
 
-      - name: Upload assets (proot + rootfs) for debugging
+      - name: Upload assets for debugging
         uses: actions/upload-artifact@v4
         with:
           name: container-assets
